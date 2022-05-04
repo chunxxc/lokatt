@@ -1,0 +1,15 @@
+OUT = bin/main
+CC = nvcc
+INC = -I/usr/include/hdf5/serial
+LIBS = -lhdf5_serial -lhdf5_cpp -lboost_system -lboost_filesystem -lboost_program_options
+CFLAGS = -Xcompiler -O3 -Xptxas -O3 -maxrregcount 32 -use_fast_math
+TF_CFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
+TF_LFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))') )
+
+OBJ = main.o dnaseq_beam.o
+
+main :
+        nvcc -c -o dnaseq_beam.o dnaseq_beam.cu $(CFLAGS)
+        nvcc $(INC) -c -o main.o main.cpp $(CFLAGS)
+        nvcc main.o dnaseq_beam.o $(LIBS) $(CFLAGS)
+        ./a.out

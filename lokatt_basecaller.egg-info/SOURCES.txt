@@ -1,0 +1,17 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+lokatt/__init__.py
+lokatt/gpu_beamsearch_opt.py
+lokatt/model_2RES2BI512_resoriginal.py
+lokatt/utils_dna.py
+lokatt/tensorflow_op/__init__.py
+lokatt/tensorflow_op/dnaseq_beam_im.py
+lokatt_basecaller.egg-info/PKG-INFO
+lokatt_basecaller.egg-info/SOURCES.txt
+lokatt_basecaller.egg-info/dependency_links.txt
+lokatt_basecaller.egg-info/entry_points.txt
+lokatt_basecaller.egg-info/not-zip-safe
+lokatt_basecaller.egg-info/requires.txt
+lokatt_basecaller.egg-info/top_level.txt
