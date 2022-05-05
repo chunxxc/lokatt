@@ -1,3 +1,0 @@
-*fast5 filter=lfs diff=lfs merge=lfs -text
-*f5 filter=lfs diff=lfs merge=lfs -text
-*checkpoint.data* filter=lfs diff=lfs merge=lfs -text

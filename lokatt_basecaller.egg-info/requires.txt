@@ -1,5 +1,0 @@
-numpy
-tensorflow
-tensorflow_probability
-h5py
-tqdm

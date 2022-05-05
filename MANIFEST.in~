@@ -1,2 +1,0 @@
-recursive-include  tensorflow_dnaseq_beam *.so
-recursive-include  python *.so
