@@ -9,6 +9,7 @@ import h5py
 import time
 import threading
 from tqdm import tqdm
+from tensorflow.python.platform import resource_loader
 
 from .utils_dna import prepro_signal,base2num,seg_assembler
 from .tensorflow_op.dnaseq_beam_im import dnaseq_beam
@@ -27,10 +28,10 @@ def argparser():
   parser.add_argument('-output',default='output/',type=str,help='where to save fasta file')
   parser.add_argument('-tf_weights','--tf_weights_path',default='model/default/my_checkpoint',type=str,help='TF weights path')
   parser.add_argument('-kmer','--K',type = int,default = 5, help='specify kmer in model init, default 5')
-  parser.add_argument('-name',default='lokattoutput',type=str,help='fasta name') 
+  parser.add_argument('-name',default='meow',type=str,help='fasta name') 
 #  parser.add_argument('-d','--device',default=0,type=int,help='which gpu to use, default 0')
   parser.add_argument('-batch',type=int,default=30,help='batch size, default 60')
-  parser.add_argument('-max_reads',type=int,default=-1,help='max reads, default all')
+  #parser.add_argument('-max_reads',type=int,default=-1,help='max reads, default all')
   parser.add_argument('-fast5','--fast5_path',default='example_fast5/',type=str,help='input raw reads file')
   parser.add_argument('-ll',type=str2bool,default=True,help='if use Loglogistic duration estimation per read, default True')
   parser.add_argument('-norm_sig',type=str2bool,default=True,help='if normalize signals, default true')
@@ -110,7 +111,7 @@ def main(args):
   global PARAMS
   global bases_dict
   PARAMS=args
-  transition_probability = np.load('/home/chunx/DNA-NN/transition_5mer_ecoli.npy').astype(np.float32)
+  transition_probability = np.load(resource_loader.get_path_to_datafile('transition_5mer_ecoli.npy')).astype(np.float32)
   batch_size = PARAMS.batch
   seg_length = np.int32(PARAMS.seg_length)
   stride = np.int32(PARAMS.stride)
@@ -118,7 +119,8 @@ def main(args):
   duration = np.zeros([batch_size,16],dtype=np.float32)
   tail_factor = np.zeros([batch_size],dtype=np.float32)
   base_per_read = 0
-  max_reads = PARAMS.max_reads
+  #max_reads = PARAMS.max_reads
+  max_reads = -1
   batch_duration = np.zeros((batch_size,16)).astype(np.float32)
   batch_tail = np.zeros(batch_size).astype(np.float32)
   batch_input = np.zeros((batch_size,PARAMS.seg_length,1)).astype(np.float32)-100

@@ -21,6 +21,8 @@ from setuptools import Extension
 from setuptools import find_packages
 from setuptools import setup
 from setuptools.dist import Distribution
+from setuptools.command.install import install
+
 import os
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
