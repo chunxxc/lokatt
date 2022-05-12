@@ -1,3 +1,6 @@
+​
+<img  align="right" src="https://github.com/chunxxc/lokatt/blob/main/lokatt_paint.jpg" alt="drawing" width="400"/> 
+
 # lokatt
 An open source HMM-DNN nanopore DNA basecaller
 
