@@ -25,7 +25,7 @@ g++  -shared ./lokatt/tensorflow_op/dnaseq_beam.cc ./lokatt/tensorflow_op/dnaseq
 
 pip3 install -r requirements.txt
 
-python3 setup.py develop
+python3 setup.py install
 
 ```
 ## Usage
