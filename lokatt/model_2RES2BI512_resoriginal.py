@@ -22,8 +22,8 @@ class Model_RESBi(tf.keras.Model):
     super(Model_RESBi, self).__init__()
     self.initializer = tf.keras.initializers.HeNormal()
     self.output_dim = 4**kmer
-    self.res1 = Residual_block(initializer=self.initializer)
-    self.res2 = Residual_block(initializer=self.initializer)
+    self.res1 = Residual_block(initializer=self.initializer)#,channel=[32,64,32],kernel=[3,5,3])
+    self.res2 = Residual_block(initializer=self.initializer)#,channel=[64,128,64],kernel=[3,5,3])
     #self.resx = Residual_block(dilat=[5,5,5],initializer=self.initializer)
     #self.res3 = Residual_block()
     #self.res4 = Residual_block()
@@ -31,6 +31,7 @@ class Model_RESBi(tf.keras.Model):
     #self.res6 = Residual_block()
     self.bilstm1 = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(256,return_sequences=True,return_state=True,kernel_initializer=self.initializer))
     self.bilstm2 = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(1024,return_sequences=True,return_state=True,kernel_initializer=self.initializer))
+    #self.bilstm3 = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(1024,return_sequences=True,return_state=True,kernel_initializer=self.initializer))
     #self.biconvlstm1 = tf.keras.layers.Bidirectional(tf.keras.layers.ConvLSTM1D(256,15,return_sequences=True,return_state=True,kernel_initializer=self.initializer))
     #self.biconvlstm1 = tf.keras.layers.Bidirectional(tf.keras.layers.ConvLSTM1D(256,15,return_sequences=True,return_state=True,kernel_initializer=self.initializer))
     #self.bilstm1 = tf.keras.layers.Bidirectional(tf.keras.layers.GRU(256,return_sequences=True,return_state=True,kernel_initializer=self.initializer))
@@ -54,8 +55,8 @@ class Model_RESBi(tf.keras.Model):
     #x = self.resx(x,training)
     x = self.dropout1(x, training=training)
     x,_,_,_,_ = self.bilstm1(x)
-    x,_,_,_,_ = self.bilstm2(x)
-    #h6,_,_,_,_ = self.bilstm3(h5)
+    x,_,_,_,_ = self.bilstm2(x) # extra
+    #x,_,_,_,_ = self.bilstm3(x)
     x = self.dropout2(x, training=training)
     x = self.dense(x)
     if not training:
@@ -96,7 +97,7 @@ class Residual_block(tf.keras.layers.Layer):
 ######################################################################################
 if __name__ == '__main__':
   physical_devices = tf.config.list_physical_devices('GPU')
-  tf.config.set_visible_devices(physical_devices[2], 'GPU')
+  tf.config.set_visible_devices(physical_devices[1], 'GPU')
   import pdb;pdb.set_trace()
-  mymodel = Model_RESBi()
+  mymodel = Model_RESBi(5)
   test = mymodel(np.random.rand(1,4096,1).astype(np.float32))

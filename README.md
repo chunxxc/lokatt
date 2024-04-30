@@ -5,18 +5,10 @@
 An open source HMM-DNN nanopore DNA basecaller
 
 ## Installation
-### Install through pip package
-You can install Lokatt as a pre-compiled wheel file. Currently the basecaller only supports Tensorflow 2.8.0 and GPU with CUDA 11+.
+### Install from source (recommended)
+It is recommemded to install the lokatt basecaller from source. This only requires the tensorflow\_op/dnaseq\_beam.so itself to be compiled beforehand.
 
-Inside lokatt/ directory:
-```bash
-  pip install ./dist/lokattcu110-0.0.1-py3-none-any.whl
-  pip install ./dist/lokattcu112-0.0.1-py3-none-any.whl
-```
-### Install from source
-You can compile the lokatt tensorflow operation from source. This requires the tensorflow itself to be compiled from source or running within a docker image.
-
-Inside lokatt/ dorectory:
+Inside this git directory:
 ```bash
 TF_CFLAGS=( $(python3 -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
 
@@ -26,48 +18,51 @@ nvcc -std=c++11 -c -o ./lokatt/tensorflow_op/dnaseq_beam.cu.o ./lokatt/tensorflo
 
 g++  -shared ./lokatt/tensorflow_op/dnaseq_beam.cc ./lokatt/tensorflow_op/dnaseq_beam.cu.o -o ./lokatt/tensorflow_op/dnaseq_beam.so -fPIC -I /usr/local/cuda/include/ -L /usr/local/cuda/lib64/ -lcudart ${TF_CFLAGS[@]} ${TF_LFLAGS[@]} -O2
 
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 
-python3 setup.py install
+pip install ./
 
 ```
+### Install through pip package
+You can install Lokatt as a pre-compiled wheel file. Currently the basecaller only supports Tensorflow>2.8.0 and GPU with CUDA 12.2.
+
+```bash
+  python -m pip install ./dist/lokatt-0.1.0-py3-none-any.whl
+```
+However, after installing the package, you may still need to recompile tensorflow\_op/dnaseq\_beam.so to match your local CUDA. You will need to first locate the directory that lokatt was installed in, then run the first four commands from "Install from source". 
 ## Usage
 ### Basecalling
 Use the following command to basecall fast5 files inside example\_fast5/ and generate output/meow.fasta with default Lokatt model
 ```bash
   lokatt basecaller -fast5 example_fast5/ -output output/ -batch 60 -name meow
 ```
-### Evaluation
 ## Repository Overview
 A quick overview of the folder structure of this template repository.
 ```bash
 .
 ├── dist
-│   ├── lokatt-0.0.1-py3-none-any.whl
-│   ├── lokatt-0.0.1.tar.gz
-│   ├── lokattcu110-0.0.1-py3-none-any.whl
-│   └── lokattcu112-0.0.1-py3-none-any.whl
+│   ├── lokatt-0.1.0-py3-none-any.whl
+│   ├── lokatt-0.1.0.tar.gz
 ├── example_fast5
 │   └── FAR64318_97d55db5_97.fast5
+│   └── Ecoli_illumina_contig.fasta
 ├── LICENSE
 ├── lokatt
+│   ├── __init__.py
+│   └── utils_dna.py
 │   ├── error_summary.py
 │   ├── gpu_beamsearch_opt.py
-│   ├── __init__.py
-│   ├── model_2RES2BI512_resoriginal.py
-│   ├── tensorflow_op
-│   │   ├── dnaseq_beam.cc
-│   │   ├── dnaseq_beam.cu
-│   │   ├── dnaseq_beam.cu.o
-│   │   ├── dnaseq_beam_DNA-NN.so
-│   │   ├── dnaseq_beam.h
-│   │   ├── dnaseq_beam_im.py
-│   │   ├── dnaseq_beam.o
-│   │   ├── dnaseq_beam.so
-│   │   ├── dnaseq_beam_tf_cu112docker.so
-│   │   ├── __init__.py
 │   ├── transition_5mer_ecoli.npy
-│   └── utils_dna.py
+│   ├── model_2RES2BI512_resoriginal.py
+│   └── tensorflow_op
+│       ├── dnaseq_beam.cc
+│       ├── dnaseq_beam.cu
+│       ├── dnaseq_beam.cu.o
+│       ├── dnaseq_beam.h
+│       ├── dnaseq_beam_im.py
+│       ├── dnaseq_beam.o
+│       ├── dnaseq_beam.so
+│       └── __init__.py
 ├── makefile
 ├── MANIFEST.in
 ├── model
@@ -78,8 +73,8 @@ A quick overview of the folder structure of this template repository.
 ├── output
 │   ├── identities.png
 │   ├── lengths.png
-│   ├── lokattoutput.fasta
-│   └── lokattoutput_nosec.paf
+│   ├── moew.fasta
+│   └── moew_nosec.paf
 ├── README.md
 ├── requirements.txt
 └── setup.py

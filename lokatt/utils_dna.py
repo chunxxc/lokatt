@@ -183,6 +183,31 @@ def transition_compute(Z_,K):
   print('done')
   return A
 ###############################################################################################
+def diffs(x,size=4):
+  x = np.array(x)
+  x_ = np.zeros((x.size-size+1,size))
+  for i in range(size-1):
+    x_[:,i] = x[i:-size+i+1]
+  x_[:,-1] = x[size-1:]
+  means = np.median(x_,axis=1) #np.median most costly
+  return np.abs(means[1:]-means[:-1])
+def estimate_duration(signals,window_size=4,diff_thre=0.4):
+  #signals = signals.reshape(-1)
+  sig_len = len(signals)
+  if sig_len>4096:
+    signals = signals[(sig_len//2-1024):(sig_len//2+1024)]
+  differences = diffs(signals,window_size)#median
+  duration = len(signals)/np.sum(differences>diff_thre)
+  if duration > 20:
+    duration = 20
+  mu = 0.0927*duration+1.1454
+  num = 20
+  loc = mu
+  scale = 0.415
+  x = np.arange(1,num).astype(float)
+  log_z = (np.log(x)-loc)/scale
+  # return log-logistic ditributed duration
+  return np.exp((-np.log(scale)-loc+(1.-scale)*log_z-2*(np.log1p(np.exp(-np.abs(log_z))) + np.maximum(log_z, 0))))
 def normalize(x,op='standarlise'):
   if op=='normalize':
     x_min = np.min(x)

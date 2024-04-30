@@ -21,6 +21,7 @@ from __future__ import print_function
 from tensorflow.python.framework import load_library
 from tensorflow.python.platform import resource_loader
 
-dnaseq_beam_module = load_library.load_op_library(
-    resource_loader.get_path_to_datafile('dnaseq_beam.so'))
+#import tensorflow as tf
+dnaseq_beam_module = load_library.load_op_library(resource_loader.get_path_to_datafile('dnaseq_beam.so'))
+#dnaseq_beam_module = tf.load_op_library('./dnaseq_beam.so')
 dnaseq_beam = dnaseq_beam_module.dnaseq_beam

@@ -1,5 +1,4 @@
 numpy
 tensorflow
-tensorflow_probability
-h5py # and vbz plugin
+h5py
 tqdm

@@ -26,7 +26,7 @@ from setuptools.command.install import install
 import os
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-__version__ = '0.0.1'
+__version__ = '0.1.0'
 REQUIRED_PACKAGES = [
     'tensorflow >= 2.1.0',
 ]
@@ -39,18 +39,8 @@ class InstallPlatlib(install):
         install.finalize_options(self)
         self.install_lib = self.install_platlib
 
-'''
-class BinaryDistribution(Distribution):
-  """This class is needed in order to create OS specific wheels."""
-
-  def has_ext_modules(self):
-    return True
-
-  def is_pure(self):
-    return False
-'''
 require_file = 'requirements.txt'
-with open('/home/'+require_file) as f:
+with open('/home/x_xuexu/proj/lokatt_test/'+require_file) as f:
     requirements = f.read().splitlines()
 
 

@@ -2,16 +2,16 @@ from __future__ import absolute_import
 import os
 import numpy as np
 import tensorflow as tf
+import argparse
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 import sys
-import tensorflow_probability as tfp
 import h5py
 import time
 import threading
 from tqdm import tqdm
 from tensorflow.python.platform import resource_loader
 
-from .utils_dna import prepro_signal,base2num,seg_assembler
+from .utils_dna import prepro_signal,base2num,seg_assembler, estimate_duration
 from .tensorflow_op.dnaseq_beam_im import dnaseq_beam
 from .model_2RES2BI512_resoriginal import Model_RESBi
 
@@ -26,18 +26,19 @@ def str2bool(v):
 def argparser():
   parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,add_help=False)
   parser.add_argument('-output',default='output/',type=str,help='where to save fasta file')
-  parser.add_argument('-tf_weights','--tf_weights_path',default='model/default/my_checkpoint',type=str,help='TF weights path')
-  parser.add_argument('-kmer','--K',type = int,default = 5, help='specify kmer in model init, default 5')
-  parser.add_argument('-name',default='meow',type=str,help='fasta name') 
+  parser.add_argument('-tf_weights','--tf_weights_path',default='lokatt/model/default/my_checkpoint',type=str,help='TF weights path default using lokatt/model/default/my_checkpoint')
+  parser.add_argument('-kmer','--K',type = int,default = 5, help=argparse.SUPPRESS)
+  parser.add_argument('-name',default='meow',type=str,help='output fasta name') 
 #  parser.add_argument('-d','--device',default=0,type=int,help='which gpu to use, default 0')
-  parser.add_argument('-batch',type=int,default=30,help='batch size, default 60')
+  parser.add_argument('-batch',type=int,default=100,help='batch size, default 100')
   #parser.add_argument('-max_reads',type=int,default=-1,help='max reads, default all')
-  parser.add_argument('-fast5','--fast5_path',default='example_fast5/',type=str,help='input raw reads file')
-  parser.add_argument('-ll',type=str2bool,default=True,help='if use Loglogistic duration estimation per read, default True')
-  parser.add_argument('-norm_sig',type=str2bool,default=True,help='if normalize signals, default true')
+  parser.add_argument('-fast5','--fast5_path',default='',type=str,help='input path containing raw reads (fast5s)')
+  parser.add_argument('-ll',type=str2bool,default=True,help=argparse.SUPPRESS)
+  parser.add_argument('-norm_sig',type=str2bool,default=True,help=argparse.SUPPRESS)
   
   parser.add_argument('-seg_length',type = int,default = 4096, help='length of signals used for one viterbi,default 4096')
   parser.add_argument('-stride',type=int,default=3800,help='stride for signal segments,default 3800, if set to -1 then no seg is used')
+  parser.add_argument('-beam',type=int,default=512,help='number of beams, default 512')  
   return parser
 def parse_arguments(sys_input):
   parser = argparser()
@@ -120,6 +121,8 @@ def main(args):
   tail_factor = np.zeros([batch_size],dtype=np.float32)
   base_per_read = 0
   #max_reads = PARAMS.max_reads
+  l_duration = np.zeros((16),dtype=np.float32)
+  l_tail = 0.8
   max_reads = -1
   batch_duration = np.zeros((batch_size,16)).astype(np.float32)
   batch_tail = np.zeros(batch_size).astype(np.float32)
@@ -138,7 +141,9 @@ def main(args):
     out_fn = PARAMS.output+out_fn
     f_output = open(out_fn,'w')
   for one_fast5 in os.listdir(PARAMS.fast5_path):
-    f = h5py.File(PARAMS.fast5_path+one_fast5,'r')
+    if '.fast5' not in one_fast5 and '.f5' not in one_fast5:
+      continue
+    f = h5py.File(PARAMS.fast5_path+one_fast5,'r')    
     if 'unet' in PARAMS.tf_weights_path:
       myNN = Model_UNET(kmer=PARAMS.K)
     else:
@@ -151,6 +156,7 @@ def main(args):
     nodes = iter(f.items())
     pbar = tqdm(total=max_reads)
     start = time.time()
+    '''
     l_duration = np.zeros(16,dtype=np.float32)
     l_tail = np.zeros(1,dtype=np.float32)
     ll=tfp.distributions.LogLogistic(2.1,0.415)
@@ -158,6 +164,7 @@ def main(args):
     l_duration[:15] = ll_prob[:15]
     l_tail[:] = ll_prob[16]/ll_prob[15]
     l_duration[-1] = ll_prob[15]/(1-l_tail)
+    '''
     cpu_t = threading.Thread()
     cpu_t.start()
     tf_trans = tf.constant(transition_probability)
@@ -165,23 +172,17 @@ def main(args):
       pbar.update(1)
       bases_dict[node_name] = []
       norm_signals = prepro_signal(node['Raw']['Signal'][:]) # no quantized signal
-      if PARAMS.ll:
-        nowt = time.time()
-        if len(norm_signals)>4000:
-          mu = estimate_mu(norm_signals)
-        else:
-          mu = 2.1
-        ll=tfp.distributions.LogLogistic(mu,0.415)
-        ll_prob = ll.prob(np.arange(1,20).astype(np.float32))
-        l_duration[:15] = ll_prob[:15]
-        l_tail[:] = ll_prob[16]/ll_prob[15]
-        l_duration[-1] = ll_prob[15]/(1-l_tail)
-        final_n = int(norm_signals.shape[0]//stride)+1 # we take whatever is at last
+      nowt = time.time()
+      ll_prob = estimate_duration(norm_signals)
+      l_duration[:15] = ll_prob[:15]
+      l_tail = ll_prob[16]/ll_prob[15]
+      l_duration[-1] = ll_prob[15]/(1-l_tail)
+      final_n = int(norm_signals.shape[0]//stride)+1 # we take whatever is at last
       for seg_i in range(final_n):
         batch_id.append(node_name)
         batch_seg_i = len(batch_id)-1
         batch_duration[batch_seg_i,:] = l_duration[:]
-        batch_tail[batch_seg_i] = l_tail[:]
+        batch_tail[batch_seg_i] = l_tail
         if seg_i*stride+seg_length > norm_signals.shape[0]:
           sig_seg_len = norm_signals.shape[0]-seg_i*stride
           batch_input[batch_seg_i,:sig_seg_len,0] = norm_signals[seg_i*stride:]# whatever is at last
@@ -189,7 +190,7 @@ def main(args):
           batch_input[batch_seg_i,:,0] = norm_signals[seg_i*stride:seg_i*stride+seg_length]
         if len(batch_id)==batch_size:
           Px = myNN(batch_input)
-          output = dnaseq_beam(Px+1e-5, tf.Variable(batch_duration), tf.Variable(batch_tail),tf_trans)
+          output = dnaseq_beam(Px+1e-5, tf.Variable(batch_duration), tf.Variable(batch_tail),tf_trans,number_of_beams=PARAMS.beam)
           for thre_i in range(len(threads)):
             if not threads[thre_i].is_alive():
               threads[thre_i] = threading.Thread(target=finish_fasta,args=(output.numpy(),batch_id[:],finished_id[:],f_output,assembler_percent,lock))
@@ -201,7 +202,7 @@ def main(args):
               alive_T += 1
           count += len(finished_id)
           if count%100==0:
-            tqdm.write('basecalling speed '+str(total_bases/(time.time()-start))+' bases/sec')
+            #tqdm.write('basecalling speed '+str(total_bases/(time.time()-start))+' bases/sec')
             total_bases = 0
             start=time.time()
           finished_id = []
